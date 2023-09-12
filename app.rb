@@ -7,7 +7,7 @@ server = WEBrick::HTTPServer.new({
 })
 # server.mount('/', WEBrick::HTTPServlet::FileHandler, Dir.pwd, { :FancyIndexing => false })
 server.mount_proc '/' do |request, response|
-	response.body = request.query['a']
+	response.body = "user_id:" + request.query['a'] +","+"password:"+request.query['b']
 end
 trap("INT"){ server.shutdown }
 server.start
