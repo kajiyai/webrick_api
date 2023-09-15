@@ -29,7 +29,17 @@ end
 # user_idのチェック
 def check_user_id(user_id)
 	check_length(user_id,6,20)
+	reg_single_byte_alp(user_id)
 end
+
+# passwordのチェック
+def check_password(password)
+	check_length(password,8,20)
+	reg_single_byte_alp_code(password)
+end
+
+
+
 
 # フィールド値のチェック
 def check_field
