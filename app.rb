@@ -3,97 +3,78 @@ require 'json'
 
 # user_idのチェック
 def check_user_id(user_id)
-	return "more than 6 and less than 20" unless check_length(user_id,6,20)
-	return "use half-width alphanumeric character " unless reg_single_byte_alp(user_id)
-	return "require user_id" unless check_require(user_id)
-	true
+  return "require user_id" unless check_require(user_id)
+  return "more than 6 and less than 20" unless check_length(user_id, 6, 20)
+  return "use half-width alphanumeric character " unless reg_single_byte_alp(user_id)
+  true
 end
 
 # passwordのチェック
 def check_password(password)
-	return "more than 8 and less than 20" unless check_length(password,8,20)
-	return "use half-width alphanumeric character and some codes " unless reg_single_byte_alp_code(password)
-	return "require password" unless check_require(password)
-	true
-end
-
-
-# フィールド値のチェック
-def check_field
-	return false unless check_field?
-	return false unless check_require?
+  return "require password" unless check_require(password)
+  return "more than 8 and less than 20" unless check_length(password, 8, 20)
+  return "use half-width alphanumeric character and some codes " unless reg_single_byte_alp_code(password)
+  true
 end
 
 # 必須項目の存在
 def check_require(str)
-	!str.empty?
+  str && !str.empty?
 end
 
 # 値の長さ
 def check_length(str, min, max)
-	str.length > min || str.length < max
+  str.length >= min && str.length <= max
 end
-
 
 ### 正規表現 ###
 
 # 半角英数字
 def reg_single_byte_alp(str)
-	# TODO: 正規表現でなんかかけ！
-	reg = /^[a-zA-Z0-9]+$/
-	reg.match?(str)
+  reg = /^[a-zA-Z0-9]+$/
+  reg.match?(str)
 end
 
 # 半角英数字記号
 def reg_single_byte_alp_code(str)
-	reg = /^[!-~]+$/
-	reg.match?(str)
-end
-
-# リクエストの文字列を整形
-def cleanup_request_string(str)
-	reg = /(\r\n?|\n|\s|"\")/
-	str.gsub(reg,"")
+  reg = /^[!-~]+$/
+  reg.match?(str)
 end
 
 ### 正規表現 ###
 
 # user_idの重複
 def dup_user_id
-	# TODO: user_idをどこに補完するか決めたら書け！賞味初めは同階層にテキストファイル置いておくだけで良いかも！！！
+  # TODO: user_idをどこに補完するか決めたら書け！賞味初めは同階層にテキストファイル置いておくだけで良いかも！！！
 end
 
-
-
-
 server = WEBrick::HTTPServer.new({ 
-	:DocumentRoot => './',
-	:BindAddress => '127.0.0.1',
-	:Port => 8000
+  :DocumentRoot => './',
+  :BindAddress => '127.0.0.1',
+  :Port => 8000
 })
-# server.mount('/', WEBrick::HTTPServlet::FileHandler, Dir.pwd, { :FancyIndexing => false })
-server.mount_proc '/' do |req, res|
-	info = "method=#{req.request_method}, uri=#{req.request_uri}, query=#{req.query}, body=#{req.body}"
-	
-  server.logger.info(info)
-	# TODO: req.bodyの文字列の改行コードを削除して綺麗なhashの形に整形する
-	req_body = cleanup_request_string(req.body)
-	req_body_h = JSON.parse(req_body)
-	user_id, password = req_body_h["user_id"], req_body_h["password"]
-	# puts check_user_id(user_id)
-	puts check_password(password)
-	puts user_id, password
 
-	# user_id check
-	check_user_id_result = check_user_id(user_id)
-	check_password_result = check_password(password)
-	if check_user_id_result != true
-		res.body = {"message": "Account creation failed", "cause": check_user_id_result}
-	elsif check_password_result != true
-		res.body = {"message": "Account creation failed", "cause": check_password_result}	
-	else
-		res.body = {"message": "Account successly created","user": req_body_h}.to_json
-	end	
+server.mount_proc '/' do |req, res|
+  info = "method=#{req.request_method}, uri=#{req.request_uri}, query=#{req.query}, body=#{req.body}"
+  
+  server.logger.info(info)
+  req_body = req.body
+  p req_body
+  req_body_h = JSON.parse(req_body)
+  p req_body_h
+  user_id, password = req_body_h["user_id"], req_body_h["password"]
+  p user_id, password
+
+  # user_id check
+  check_user_id_result = check_user_id(user_id)
+  check_password_result = check_password(password)
+  if check_user_id_result != true
+    res.body = {"message": "Account creation failed", "cause": check_user_id_result}.to_json
+  elsif check_password_result != true
+    res.body = {"message": "Account creation failed", "cause": check_password_result}.to_json
+  else
+    res.body = {"message": "Account successfully created","user": req_body_h}.to_json
+  end
 end
 
 trap("INT"){ server.shutdown }
