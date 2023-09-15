@@ -1,25 +1,21 @@
 require 'webrick'
 require 'json'
 
-# リクエストの文字列を整形
-def cleanup_request_string(str)
-end
-
 # user_idのチェック
 def check_user_id(user_id)
 	return "more than 6 and less than 20" unless check_length(user_id,6,20)
 	return "use half-width alphanumeric character " unless reg_single_byte_alp(user_id)
-	return "require user_id" unless check_require(str)
+	return "require user_id" unless check_require(user_id)
 	true
 end
 
 # passwordのチェック
 def check_password(password)
-	check_length(password,8,20)
-	reg_single_byte_alp_code(password)
+	return "more than 8 and less than 20" unless check_length(password,8,20)
+	return "use half-width alphanumeric character and some codes " unless reg_single_byte_alp_code(password)
+	return "require password" unless check_require(password)
+	true
 end
-
-
 
 
 # フィールド値のチェック
@@ -54,6 +50,12 @@ def reg_single_byte_alp_code(str)
 	reg.match?(str)
 end
 
+# リクエストの文字列を整形
+def cleanup_request_string(str)
+	reg = /(\r\n?|\n|\s|"\")/
+	str.gsub(reg,"")
+end
+
 ### 正規表現 ###
 
 # user_idの重複
@@ -75,13 +77,23 @@ server.mount_proc '/' do |req, res|
 	
   server.logger.info(info)
 	# TODO: req.bodyの文字列の改行コードを削除して綺麗なhashの形に整形する
-	reg = /(\r\n?|\n|\s|"\")/
-	req_body = req.body.gsub(reg,"")
+	req_body = cleanup_request_string(req.body)
 	req_body_h = JSON.parse(req_body)
 	user_id, password = req_body_h["user_id"], req_body_h["password"]
-	puts check_user_id(user_id)
+	# puts check_user_id(user_id)
+	puts check_password(password)
 	puts user_id, password
-	res.body = {"message": "Account successly created","user": req_body_h}.to_json
+
+	# user_id check
+	check_user_id_result = check_user_id(user_id)
+	check_password_result = check_password(password)
+	if check_user_id_result != true
+		res.body = {"message": "Account creation failed", "cause": check_user_id_result}
+	elsif check_password_result != true
+		res.body = {"message": "Account creation failed", "cause": check_password_result}	
+	else
+		res.body = {"message": "Account successly created","user": req_body_h}.to_json
+	end	
 end
 
 trap("INT"){ server.shutdown }
