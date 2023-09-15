@@ -61,8 +61,10 @@ server.mount_proc '/' do |req, res|
   check_user_id_result = check_user_id(user_id)
   check_password_result = check_password(password)
   if check_user_id_result != true
+		res.status = 400
     res.body = {"message": "Account creation failed", "cause": check_user_id_result}.to_json
   elsif check_password_result != true
+		res.status = 400
     res.body = {"message": "Account creation failed", "cause": check_password_result}.to_json
   else
     res.body = {"message": "Account successfully created","user": req_body_h}.to_json
