@@ -55,17 +55,9 @@ server = WEBrick::HTTPServer.new({
 })
 
 server.mount_proc '/' do |req, res|
-  info = "method=#{req.request_method}, uri=#{req.request_uri}, query=#{req.query}, body=#{req.body}"
-  
-  server.logger.info(info)
   req_body = req.body
-  p req_body
   req_body_h = JSON.parse(req_body)
-  p req_body_h
   user_id, password = req_body_h["user_id"], req_body_h["password"]
-  p user_id, password
-
-  # user_id check
   check_user_id_result = check_user_id(user_id)
   check_password_result = check_password(password)
   if check_user_id_result != true
