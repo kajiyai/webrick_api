@@ -46,12 +46,23 @@ def check_length(str, min, max)
 	str.length < min || str.length > max
 end
 
+
+### 正規表現 ###
+
 # 半角英数字
-def single_byte_alp(str)
+def reg_single_byte_alp(str)
 	# TODO: 正規表現でなんかかけ！
 	reg = /^[a-zA-Z0-9]+$/
 	reg.match?(str)
 end
+
+# 半角英数字記号
+def reg_single_byte_alp_code(str)
+	reg = /^[!-~]+$/
+	reg.match?(str)
+end
+
+### 正規表現 ###
 
 # user_idの重複
 def dup_user_id
