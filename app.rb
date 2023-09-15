@@ -24,7 +24,11 @@ server.start
 
 # リクエストの文字列を整形
 def cleanup_request_string(str)
-	
+end
+
+# user_idのチェック
+def check_user_id(user_id)
+	check_length(user_id,6,20)
 end
 
 # フィールド値のチェック
@@ -38,7 +42,8 @@ def check_require
 end
 
 # 値の長さ
-def check_length
+def check_length(str, min, max)
+	str.length < min || str.length > max
 end
 
 # 文字種類
