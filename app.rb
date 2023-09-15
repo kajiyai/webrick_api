@@ -9,13 +9,14 @@ server = WEBrick::HTTPServer.new({
 # server.mount('/', WEBrick::HTTPServlet::FileHandler, Dir.pwd, { :FancyIndexing => false })
 server.mount_proc '/' do |req, res|
 	info = "method=#{req.request_method}, uri=#{req.request_uri}, query=#{req.query}, body=#{req.body}"
+	
   server.logger.info(info)
 	# TODO: req.bodyの文字列の改行コードを削除して綺麗なhashの形に整形する
 	reg = /(\r\n?|\n|\s|"\")/
 	req_body = req.body.gsub(reg,"")
 	req_body_h = JSON.parse(req_body)
-	# puts req_body_h
-	
+	user_id, password = req_body_h["user_id"], req_body_h["password"]
+	puts user_id, password
 	res.body = {"message": "Account successly created","user": req_body_h}.to_json
 end
 
@@ -28,8 +29,10 @@ end
 
 # user_idのチェック
 def check_user_id(user_id)
-	check_length(user_id,6,20)
-	reg_single_byte_alp(user_id)
+	return "xxx" unless check_length(user_id,6,20)
+	return "xxx" unless reg_single_byte_alp(user_id)
+	return "xxx" unless check_require(str)
+	true
 end
 
 # passwordのチェック
@@ -48,7 +51,8 @@ def check_field
 end
 
 # 必須項目の存在
-def check_require
+def check_require(str)
+	!str.empty?
 end
 
 # 値の長さ
