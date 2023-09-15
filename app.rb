@@ -11,11 +11,13 @@ server.mount_proc '/' do |req, res|
 	info = "method=#{req.request_method}, uri=#{req.request_uri}, query=#{req.query}, body=#{req.body}"
   server.logger.info(info)
 	# TODO: req.bodyの文字列の改行コードを削除して綺麗なhashの形に整形する
-	puts req.body
+	reg = /(\r\n?|\n|\s|"\")/
+	req_body = req.body.gsub(reg,"")
+	req_body_h = JSON.parse(req_body)
+	# puts req_body_h
 	
-	# res.body = {"message": "Account successly created","user": req.body.gsub(/(\r\n?|\n|\s|\\")/,"").to_h}.to_json
+	res.body = {"message": "Account successly created","user": req_body_h}.to_json
 end
-# server.mount_proc '/' do_POST(req,res)
 
 trap("INT"){ server.shutdown }
 server.start
@@ -28,7 +30,7 @@ end
 # フィールド値のチェック
 def check_field
 	return false unless check_field?
-	return false unless check_?
+	return false unless check_require?
 end
 
 # 必須項目の存在
