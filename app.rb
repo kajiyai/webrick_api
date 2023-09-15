@@ -46,9 +46,11 @@ def check_length(str, min, max)
 	str.length < min || str.length > max
 end
 
-# 文字種類
-def check_pattern
+# 半角英数字
+def single_byte_alp(str)
 	# TODO: 正規表現でなんかかけ！
+	reg = /^[a-zA-Z0-9]+$/
+	reg.match?(str)
 end
 
 # user_idの重複
