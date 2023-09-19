@@ -3,6 +3,31 @@ require 'json'
 require 'pg'
 require 'base64'
 
+# nicknameのチェック
+def check_nickname(nickname)
+  return "less than 30" unless check_length(nickname,30)
+  return "use ascii character" unless reg_xxx(nickname)
+  true
+end
+
+# commentのチェック
+def check_comment(comment)
+  return "less than 100" unless check_length(comment,100)
+  return "use ascii character" unless reg_xxx(comment)
+  true
+end
+
+# 値の長さ
+def check_length(str, max)
+  str.length <= max
+end
+
+# TODO: 半角英数記号、空白文字も追加する必要あり
+def reg_xxx(str)
+  reg = /^[!-~]+$/
+  reg.match?(str)
+end
+
 # auhorizationヘッダのチェック
 def check_authorization_header(encoded_str,user_id,password)
   decoded_str = Base64.decode64(encoded_str)
@@ -42,7 +67,7 @@ server.mount_proc '/users' do |req, res|
         req_body = req.body
         req_body_h = JSON.parse(req_body)
         nickname, comment = req_body_h["nickname"], req_body_h["comment"]
-        # TODO: user_id, passwordを変えようしている場合、エラーを返す
+        # user_id, passwordを変えようしている場合、エラーを返す
         if req_body_h.keys.include?(["user_id","password"])
           res.status = 400
           res.body = {
