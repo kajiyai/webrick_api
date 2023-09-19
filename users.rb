@@ -41,6 +41,7 @@ class UsersServlet < WEBrick::HTTPServlet::AbstractServlet
 
   def do_GET(req, res)
     authorization_header = req.header["authorization"][0]
+    return res.status = 401, res.body = { "message":"Authentication Failed" }.to_json if authorization_header.nil?
     user_id = req.path.split('/')[-1]
     result = @conn.exec("SELECT * FROM users WHERE id = $1", [user_id])
     if result.cmd_tuples == 0
@@ -61,6 +62,7 @@ class UsersServlet < WEBrick::HTTPServlet::AbstractServlet
 
   def do_PATCH(req, res)
     authorization_header = req.header["authorization"][0]
+    return res.status = 401, res.body = { "message":"Authentication Failed" }.to_json if authorization_header.nil?
     user_id = req.path.split('/')[-1]
     result = @conn.exec("SELECT * FROM users WHERE id = $1", [user_id])
     if result.cmd_tuples == 0
