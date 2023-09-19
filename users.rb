@@ -80,6 +80,30 @@ server.mount_proc '/users' do |req, res|
             "message": "User updation failed",
             "cause": "required nickname or comment"
           }.to_json
+        else
+          check_nickname_res = check_nickname(nickname)
+          check_comment_res = check_comment(comment)
+          if check_nickname_res != true
+            res.status = 400
+            res.body = {"message": "User updation failed", "cause": check_nickname_result}.to_json
+          elsif check_comment_res != true
+            res.status = 400
+            res.body = {"message": "User updation failed", "cause": check_comment_result}.to_json
+          else
+            # TODO: update文を書く
+            update_user_sql = "update users (id,password,nickname,comment) values ('',','#{user_id}','')"
+            conn.exec(update_user_sql)
+            res_body_h = {"nickname": nickname, "comment": comment}
+            res.body = {
+              "message": "User successfully updated",
+              "recipe": [
+                {
+                  "nickname": "たろー",
+                  "comment": "僕は元気です"
+                }
+              ]
+              }
+          end
         end
       end
     else
