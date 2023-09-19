@@ -34,40 +34,47 @@ def check_authorization_header(encoded_str,user_id,password)
   decoded_str.eql?(user_id+":"+password)
 end
 
-server = WEBrick::HTTPServer.new({ 
-  :DocumentRoot => './',
-  :BindAddress => '127.0.0.1',
-  :Port => 8000
-})
+class UsersServlet < WEBrick::HTTPServlet::AbstractServlet
+  def initialize(server, conn)
+    super(server)
+    @conn = conn
+  end
 
-# DB接続
-conn = PG.connect( dbname: 'code_track', user: 'postgres' )
-
-
-# TODO: 認証と異なるuser_idを指定している場合、エラーを返す(要調査)
-
-server.mount_proc '/users' do |req, res|
-  authorization_header = req.header["authorization"][0]
-  user_id = req.path.split('/')[-1]
-  result = conn.exec("SELECT * FROM users WHERE id = $1", [user_id])
-  # user_idが存在しない場合
-  if result.cmd_tuples == 0
-    res.status = 404
-    res.body = {"message": "No User found"}.to_json
-  else
-    user = result.to_a[0].map {|key,val| [key,val.rstrip]}.to_h
-    password = user["password"]
-    nickname = user["user_id"] if user["nickname"].empty?
-    if check_authorization_header(authorization_header, user_id, password)
-      # GET methodの場合
-      if req.request_method == 'GET'
+  def do_GET(req, res)
+    authorization_header = req.header["authorization"][0]
+    user_id = req.path.split('/')[-1]
+    result = @conn.exec("SELECT * FROM users WHERE id = $1", [user_id])
+    if result.cmd_tuples == 0
+      res.status = 404
+      res.body = {"message": "No User found"}.to_json
+    else
+      user = result.to_a[0].map {|key,val| [key,val.rstrip]}.to_h
+      password = user["password"]
+      nickname = user["user_id"] if user["nickname"].empty?
+      if check_authorization_header(authorization_header, user_id, password)
         res.body = user.to_json
-      # PATCH methodの場合
-      elsif req.request_method == 'PATCH'
+      else
+        res.status = 401
+        res.body = { "message":"Authentication Failed" }.to_json
+      end
+    end
+  end
+
+  def do_PATCH(req, res)
+    authorization_header = req.header["authorization"][0]
+    user_id = req.path.split('/')[-1]
+    result = @conn.exec("SELECT * FROM users WHERE id = $1", [user_id])
+    if result.cmd_tuples == 0
+      res.status = 404
+      res.body = {"message": "No User found"}.to_json
+    else
+      user = result.to_a[0].map {|key,val| [key,val.rstrip]}.to_h
+      password = user["password"]
+      nickname = user["user_id"] if user["nickname"].empty?
+      if check_authorization_header(authorization_header, user_id, password)
         req_body = req.body
         req_body_h = JSON.parse(req_body)
         nickname, comment = req_body_h["nickname"], req_body_h["comment"]
-        # user_id, passwordを変えようしている場合、エラーを返す
         if req_body_h.keys.include?(["user_id","password"])
           res.status = 400
           res.body = {
@@ -92,7 +99,7 @@ server.mount_proc '/users' do |req, res|
           else
             # TODO: update文を書く
             update_user_sql = "update users (id,password,nickname,comment) values ('',','#{user_id}','')"
-            conn.exec(update_user_sql)
+            @conn.exec(update_user_sql)
             res_body_h = {"nickname": nickname, "comment": comment}.to_json
             res.body = {
               "message": "User successfully updated",
@@ -102,13 +109,23 @@ server.mount_proc '/users' do |req, res|
               }
           end
         end
+      else
+        res.status = 401
+        res.body = { "message":"Authentication Failed" }.to_json
       end
-    else
-      res.status = 401
-      res.body = { "message":"Authentication Failed" }.to_json
     end
   end
 end
+
+server = WEBrick::HTTPServer.new({
+  :DocumentRoot => './',
+  :BindAddress => '127.0.0.1',
+  :Port => 8000
+})
+
+conn = PG.connect(dbname: 'code_track', user: 'postgres')
+
+server.mount '/users', UsersServlet, conn
 
 trap("INT"){ server.shutdown }
 server.start
