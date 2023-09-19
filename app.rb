@@ -72,9 +72,10 @@ server.mount_proc '/' do |req, res|
 		res.status = 400
     res.body = {"message": "Account creation failed", "cause": check_password_result}.to_json
   else
-    insert_user_sql = "insert into users (id,password,nickname,comment) values ('#{user_id}','#{password}','','')"
+    insert_user_sql = "insert into users (id,password,nickname,comment) values ('#{user_id}','#{password}','#{user_id}','')"
     conn.exec(insert_user_sql)
-    res.body = {"message": "Account successfully created","user": req_body_h}.to_json
+    res_body_h = {"user_id": user_id, "nickname": user_id} # nicknameの初期値はuser_idと同値
+    res.body = {"message": "Account successfully created","user": res_body_h}.to_json
   end
 end
 
