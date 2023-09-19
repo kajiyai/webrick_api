@@ -1,5 +1,6 @@
 require 'webrick'
 require 'json'
+require 'pg'
 
 # user_idのチェック
 def check_user_id(user_id)
@@ -48,6 +49,10 @@ def dup_user_id
   # TODO: user_idをどこに補完するか決めたら書け！賞味初めは同階層にテキストファイル置いておくだけで良いかも！！！
 end
 
+
+# DB接続
+conn = PG.connect( dbname: 'code_track', user: 'postgres' )
+
 server = WEBrick::HTTPServer.new({ 
   :DocumentRoot => './',
   :BindAddress => '127.0.0.1',
@@ -67,6 +72,8 @@ server.mount_proc '/' do |req, res|
 		res.status = 400
     res.body = {"message": "Account creation failed", "cause": check_password_result}.to_json
   else
+    insert_user_sql = "insert into users (id,password,nickname,comment) values ('#{user_id}','#{password}','','')"
+    conn.exec(insert_user_sql)
     res.body = {"message": "Account successfully created","user": req_body_h}.to_json
   end
 end
