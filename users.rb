@@ -6,14 +6,14 @@ require 'base64'
 # nicknameのチェック
 def check_nickname(nickname)
   return "less than 30" unless check_length(nickname,30)
-  return "use ascii character" unless reg_xxx(nickname)
+  return "use ascii character" unless is_valid_ascii(nickname)
   true
 end
 
 # commentのチェック
 def check_comment(comment)
   return "less than 100" unless check_length(comment,100)
-  return "use ascii character" unless reg_xxx(comment)
+  return "use ascii character" unless is_valid_ascii(comment)
   true
 end
 
@@ -22,9 +22,8 @@ def check_length(str, max)
   str.length <= max
 end
 
-# TODO: 半角英数記号、空白文字も追加する必要あり
-def reg_xxx(str)
-  reg = /^[!-~]+$/
+def is_valid_ascii(str)
+  reg = /^[ -~]+$/
   reg.match?(str)
 end
 
