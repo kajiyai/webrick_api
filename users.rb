@@ -19,31 +19,23 @@ server = WEBrick::HTTPServer.new({
 conn = PG.connect( dbname: 'code_track', user: 'postgres' )
 
 server.mount_proc '/users' do |req, res|
-  # TODO: authorizationヘッダーがうんたらを書く
   authorization_header = req.header["authorization"][0]
   user_id = req.path.split('/')[-1]
   result = conn.exec("SELECT * FROM users WHERE id = $1", [user_id])
   if result.cmd_tuples == 0
-    puts "何も入ってない時の制御にちゃんと入ったで"
     res.status = 404
-    res.body = { "message":"No User found" }.to_json
+    res.body = {"message": "No User found"}.to_json
   else
     user = result.to_a[0].map {|key,val| [key,val.rstrip]}.to_h
     password = user["password"]
     nickname = user["user_id"] if user["nickname"].empty?
     if check_authorization_header(authorization_header, user_id, password)
-      puts "ok"
+      res.body = user.to_json
     else
-      puts "ng"
+      res.status = 401
+      res.body = { "message":"Authentication Failed" }.to_json
     end
   end
-  
-  # TODO: 要求されているuser_idを返す
-  
-  puts user_id
-  # TODO: 何かをする
-  
-  res.body = user.to_json
 end
 
 trap("INT"){ server.shutdown }
