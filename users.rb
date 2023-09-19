@@ -18,6 +18,9 @@ server = WEBrick::HTTPServer.new({
 # DB接続
 conn = PG.connect( dbname: 'code_track', user: 'postgres' )
 
+
+# TODO: 認証と異なるuser_idを指定している場合、エラーを返す(要調査)
+
 server.mount_proc '/users' do |req, res|
   authorization_header = req.header["authorization"][0]
   user_id = req.path.split('/')[-1]
@@ -38,10 +41,21 @@ server.mount_proc '/users' do |req, res|
       elsif req.request_method == 'PATCH'
         req_body = req.body
         req_body_h = JSON.parse(req_body)
-        # TODO: user_id, passwordを変えようしている場合、エラーを返す
         nickname, comment = req_body_h["nickname"], req_body_h["comment"]
-        # TODO: 認証と異なるuser_idを指定している場合、エラーを返す
-        # TODO: nickname, commentのバリデーション
+        # TODO: user_id, passwordを変えようしている場合、エラーを返す
+        if req_body_h.keys.include?(["user_id","password"])
+          res.status = 400
+          res.body = {
+            "message": "User updation failed",
+            "cause": "not updatable user_id and password"
+          }.to_json
+        elsif nickname.nil? && comment.nil?
+          res.status = 400
+          res.body = {
+            "message": "User updation failed",
+            "cause": "required nickname or comment"
+          }.to_json
+        end
       end
     else
       res.status = 401
