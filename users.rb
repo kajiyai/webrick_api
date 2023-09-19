@@ -91,20 +91,20 @@ class UsersServlet < WEBrick::HTTPServlet::AbstractServlet
           check_comment_res = check_comment(comment)
           if check_nickname_res != true
             res.status = 400
-            res.body = {"message": "User updation failed", "cause": check_nickname_result}.to_json
+            res.body = {"message": "User updation failed", "cause": check_nickname_res}.to_json
           elsif check_comment_res != true
             res.status = 400
-            res.body = {"message": "User updation failed", "cause": check_comment_result}.to_json
+            res.body = {"message": "User updation failed", "cause": check_comment_res}.to_json
           else
             update_user_sql = "UPDATE users SET nickname = $1, comment = $2 WHERE id = $3"
             @conn.exec(update_user_sql, [nickname, comment, user_id])
-            res_body_h = {"nickname": nickname, "comment": comment}.to_json
+            res_body_h = {"nickname": nickname, "comment": comment}
             res.body = {
               "message": "User successfully updated",
               "recipe": [
                 res_body_h
               ]
-              }
+            }.to_json
           end
         end
       else
