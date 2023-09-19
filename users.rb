@@ -93,14 +93,11 @@ server.mount_proc '/users' do |req, res|
             # TODO: update文を書く
             update_user_sql = "update users (id,password,nickname,comment) values ('',','#{user_id}','')"
             conn.exec(update_user_sql)
-            res_body_h = {"nickname": nickname, "comment": comment}
+            res_body_h = {"nickname": nickname, "comment": comment}.to_json
             res.body = {
               "message": "User successfully updated",
               "recipe": [
-                {
-                  "nickname": "たろー",
-                  "comment": "僕は元気です"
-                }
+                res_body_h
               ]
               }
           end
