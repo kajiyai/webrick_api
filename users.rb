@@ -22,6 +22,7 @@ server.mount_proc '/users' do |req, res|
   authorization_header = req.header["authorization"][0]
   user_id = req.path.split('/')[-1]
   result = conn.exec("SELECT * FROM users WHERE id = $1", [user_id])
+  # user_idが存在しない場合
   if result.cmd_tuples == 0
     res.status = 404
     res.body = {"message": "No User found"}.to_json
@@ -30,7 +31,18 @@ server.mount_proc '/users' do |req, res|
     password = user["password"]
     nickname = user["user_id"] if user["nickname"].empty?
     if check_authorization_header(authorization_header, user_id, password)
-      res.body = user.to_json
+      # GET methodの場合
+      if req.request_method == 'GET'
+        res.body = user.to_json
+      # PATCH methodの場合
+      elsif req.request_method == 'PATCH'
+        req_body = req.body
+        req_body_h = JSON.parse(req_body)
+        # TODO: user_id, passwordを変えようしている場合、エラーを返す
+        nickname, comment = req_body_h["nickname"], req_body_h["comment"]
+        # TODO: 認証と異なるuser_idを指定している場合、エラーを返す
+        # TODO: nickname, commentのバリデーション
+      end
     else
       res.status = 401
       res.body = { "message":"Authentication Failed" }.to_json
