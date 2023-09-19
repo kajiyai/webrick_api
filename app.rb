@@ -45,8 +45,9 @@ end
 ### 正規表現 ###
 
 # user_idの重複
-def dup_user_id
-  # TODO: user_idをどこに補完するか決めたら書け！賞味初めは同階層にテキストファイル置いておくだけで良いかも！！！
+def dup_user_id(conn, user_id)
+  result = conn.exec("SELECT * FROM users WHERE id = $1", [user_id])
+  result.cmd_tuples > 0
 end
 
 
@@ -65,19 +66,23 @@ server.mount_proc '/' do |req, res|
   user_id, password = req_body_h["user_id"], req_body_h["password"]
   check_user_id_result = check_user_id(user_id)
   check_password_result = check_password(password)
-  if check_user_id_result != true
-		res.status = 400
+  if dup_user_id(conn, user_id)
+    res.status = 400
+    res.body = {"message": "Account creation failed", "cause": "user_id already exists"}.to_json
+  elsif check_user_id_result != true
+    res.status = 400
     res.body = {"message": "Account creation failed", "cause": check_user_id_result}.to_json
   elsif check_password_result != true
-		res.status = 400
+    res.status = 400
     res.body = {"message": "Account creation failed", "cause": check_password_result}.to_json
   else
-    insert_user_sql = "insert into users (id,password,nickname,comment) values ('#{user_id}','#{password}','#{user_id}','')"
-    conn.exec(insert_user_sql)
+    insert_user_sql = "insert into users (id,password,nickname,comment) values ($1, $2, $3, '')"
+    conn.exec_params(insert_user_sql, [user_id, password, user_id])
     res_body_h = {"user_id": user_id, "nickname": user_id} # nicknameの初期値はuser_idと同値
     res.body = {"message": "Account successfully created","user": res_body_h}.to_json
   end
 end
+
 
 trap("INT"){ server.shutdown }
 server.start
