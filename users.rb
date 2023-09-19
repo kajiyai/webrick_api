@@ -97,9 +97,8 @@ class UsersServlet < WEBrick::HTTPServlet::AbstractServlet
             res.status = 400
             res.body = {"message": "User updation failed", "cause": check_comment_result}.to_json
           else
-            # TODO: update文を書く
-            update_user_sql = "update users (id,password,nickname,comment) values ('',','#{user_id}','')"
-            @conn.exec(update_user_sql)
+            update_user_sql = "UPDATE users SET nickname = $1, comment = $2 WHERE id = $3"
+            @conn.exec(update_user_sql, [nickname, comment, user_id])
             res_body_h = {"nickname": nickname, "comment": comment}.to_json
             res.body = {
               "message": "User successfully updated",
