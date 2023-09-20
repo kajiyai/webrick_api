@@ -51,7 +51,8 @@ class UsersServlet < WEBrick::HTTPServlet::AbstractServlet
 
   def do_GET(req, res)
     authorization_header = req.header["authorization"][0]
-    return res.status = 401, res.body = { "message":"Authentication Failed" }.to_json if authorization_header.nil?
+    return res.status = 401, res.body = { "message":"Authentication Failed" }.to_json if authorization_header.nil? # authorizationヘッダが空白の場合
+    return res.status = 401, res.body = { "message":"Authentication Failed" }.to_json if !check_authorization_header(authorization_header,@conn) # authorizationヘッダの検証
     user_id = req.path.split('/')[-1]
     result = @conn.exec("SELECT * FROM users WHERE id = $1", [user_id])
     if result.cmd_tuples == 0
@@ -61,12 +62,7 @@ class UsersServlet < WEBrick::HTTPServlet::AbstractServlet
       user = result.to_a[0].map {|key,val| [key,val.rstrip]}.to_h
       password = user["password"]
       nickname = user["user_id"] if user["nickname"].empty?
-      if check_authorization_header(authorization_header, user_id, password)
-        res.body = user.to_json
-      else
-        res.status = 401
-        res.body = { "message":"Authentication Failed" }.to_json
-      end
+      res.body = user.to_json
     end
   end
 
