@@ -55,15 +55,11 @@ class UsersServlet < WEBrick::HTTPServlet::AbstractServlet
     return res.status = 401, res.body = { "message":"Authentication Failed" }.to_json if !check_authorization_header(authorization_header,@conn) # authorizationヘッダの検証
     user_id = req.path.split('/')[-1]
     result = @conn.exec("SELECT * FROM users WHERE id = $1", [user_id])
-    if result.cmd_tuples == 0
-      res.status = 404
-      res.body = {"message": "No User found"}.to_json
-    else
-      user = result.to_a[0].map {|key,val| [key,val.rstrip]}.to_h
-      password = user["password"]
-      nickname = user["user_id"] if user["nickname"].empty?
-      res.body = user.to_json
-    end
+    return res.status = 404, res.body = {"message": "No User found"}.to_json if result.cmd_tuples == 0 # 登録されていないuser_idを指定した場合
+    user = result.to_a[0].map {|key,val| [key,val.rstrip]}.to_h
+    password = user["password"]
+    nickname = user["user_id"] if user["nickname"].empty?
+    res.body = user.to_json
   end
 
   def do_PATCH(req, res)
