@@ -43,6 +43,11 @@ def get_credential(encoded_str)
   return decoded_user_id, decoded_password
 end
 
+# authorizationヘッダのuser_idを取得
+def get_auth_user_id(encoded_str)
+  Base64.decode64(encoded_str).split(":")[0]
+end
+
 class UsersServlet < WEBrick::HTTPServlet::AbstractServlet
   def initialize(server, conn)
     super(server)
@@ -64,58 +69,34 @@ class UsersServlet < WEBrick::HTTPServlet::AbstractServlet
 
   def do_PATCH(req, res)
     authorization_header = req.header["authorization"][0]
-    return res.status = 401, res.body = { "message":"Authentication Failed" }.to_json if authorization_header.nil?
+    return res.status = 401, res.body = { "message":"Authentication Failed" }.to_json if authorization_header.nil? # authorizationヘッダが空白の場合
+    return res.status = 401, res.body = { "message":"Authentication Failed" }.to_json if !check_authorization_header(authorization_header,@conn) # authorizationヘッダの検証
+
     user_id = req.path.split('/')[-1]
+    return res.status = 403, res.body = { "message":"No Permission for Update"}.to_json if user_id !== get_auth_user_id(authorization_header) # アクセスしたpathのuser_idと認証で使用したuser_idが異なる場合
+
     result = @conn.exec("SELECT * FROM users WHERE id = $1", [user_id])
-    if result.cmd_tuples == 0
-      res.status = 404
-      res.body = {"message": "No User found"}.to_json
-    else
-      user = result.to_a[0].map {|key,val| [key,val.rstrip]}.to_h
-      password = user["password"]
-      nickname = user["user_id"] if user["nickname"].empty?
-      if check_authorization_header(authorization_header, user_id, password)
-        req_body = req.body
-        req_body_h = JSON.parse(req_body)
-        nickname, comment = req_body_h["nickname"], req_body_h["comment"]
-        if req_body_h.keys.include?(["user_id","password"])
-          res.status = 400
-          res.body = {
-            "message": "User updation failed",
-            "cause": "not updatable user_id and password"
-          }.to_json
-        elsif nickname.nil? && comment.nil?
-          res.status = 400
-          res.body = {
-            "message": "User updation failed",
-            "cause": "required nickname or comment"
-          }.to_json
-        else
-          check_nickname_res = check_nickname(nickname)
-          check_comment_res = check_comment(comment)
-          if check_nickname_res != true
-            res.status = 400
-            res.body = {"message": "User updation failed", "cause": check_nickname_res}.to_json
-          elsif check_comment_res != true
-            res.status = 400
-            res.body = {"message": "User updation failed", "cause": check_comment_res}.to_json
-          else
-            update_user_sql = "UPDATE users SET nickname = $1, comment = $2 WHERE id = $3"
-            @conn.exec(update_user_sql, [nickname, comment, user_id])
-            res_body_h = {"nickname": nickname, "comment": comment}
-            res.body = {
-              "message": "User successfully updated",
-              "recipe": [
-                res_body_h
-              ]
-            }.to_json
-          end
-        end
-      else
-        res.status = 401
-        res.body = { "message":"Authentication Failed" }.to_json
-      end
-    end
+    return res.status = 404, res.body = {"message": "No User found"}.to_json if result.cmd_tuples == 0 # 登録されていないuser_idを指定した場合
+
+    user = result.to_a[0].map {|key,val| [key,val.rstrip]}.to_h
+    password = user["password"]
+    nickname = user["user_id"] if user["nickname"].empty?
+    req_body = req.body
+    req_body_h = JSON.parse(req_body)
+    nickname, comment = req_body_h["nickname"], req_body_h["comment"]
+    # TODO: if以降の条件式が怪しいから要確認
+    return res.status = 400, res.body = {"message": "User updation failed","cause": "not updatable user_id and password"}.to_json if req_body_h.keys.include?(["user_id","password"]) # user_id,passwordを変更しようとした場合
+    return res.status = 400, res.body = {"message": "User updation failed","cause": "required nickname or comment"}.to_json if nickname.nil? && comment.nil? # nickname,commentが共に空白の場合
+
+    check_nickname_res = check_nickname(nickname)
+    check_comment_res = check_comment(comment)
+    return res.status = 400, res.body = {"message": "User updation failed", "cause": check_nickname_res}.to_json if check_nickname_res != true # nicknameのバリデーション
+    return res.status = 400, res.body = {"message": "User updation failed", "cause": check_comment_res}.to_json if check_comment_res != true # commentのバリデーション
+
+    update_user_sql = "UPDATE users SET nickname = $1, comment = $2 WHERE id = $3"
+    @conn.exec(update_user_sql, [nickname, comment, user_id])
+    res_body_h = {"nickname": nickname, "comment": comment}
+    res.body = {"message": "User successfully updated","recipe": [res_body_h]}.to_json
   end
 end
 
