@@ -28,9 +28,19 @@ def is_valid_ascii(str)
 end
 
 # auhorizationヘッダのチェック
-def check_authorization_header(encoded_str,user_id,password)
+def check_authorization_header(encoded_str,conn)
+  auth_user_id,auth_password = get_credential(encoded_str)
+  result = conn.exec("SELECT password FROM users WHERE id = $1", [auth_user_id])
+  result["password"].eql?(auth_password)
+end
+
+# authorizationヘッダの処理
+def get_credential(encoded_str)
   decoded_str = Base64.decode64(encoded_str)
-  decoded_str.eql?(user_id+":"+password)
+  decoded_strs = decoded_str.split(":")
+  decoded_user_id = decoded_strs[0]
+  decoded_password = decoded_strs[1]
+  return decoded_user_id, decoded_password
 end
 
 class UsersServlet < WEBrick::HTTPServlet::AbstractServlet
