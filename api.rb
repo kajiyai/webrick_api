@@ -55,14 +55,14 @@ end
 # nicknameのチェック
 def check_nickname(nickname)
   return "less than 30" unless check_length(nickname,0,30)
-  return "use ascii character" unless is_valid_ascii(nickname)
+  return "use character" unless contains_no_control_characters?(nickname)
   true
 end
 
 # commentのチェック
 def check_comment(comment)
   return "less than 100" unless check_length(comment,0,100)
-  return "use ascii character" unless is_valid_ascii(comment)
+  return "use character" unless contains_no_control_characters?(comment)
   true
 end
 
@@ -76,10 +76,9 @@ def check_length(str, min, max)
   str.length >= min && str.length <= max
 end
 
-# ASCII文字か
-def is_valid_ascii(str)
-  reg = /^[ -~]+$/
-  reg.match?(str)
+# 制御文字が含まれているか
+def contains_no_control_characters?(str)
+  !!(/\A[^\x00-\x1F\x7F]+\z/.match?(str))
 end
 
 # user_idの重複
@@ -182,7 +181,6 @@ class UsersServlet < WEBrick::HTTPServlet::AbstractServlet
   end
 
   # PATCHメソッド用の処理
-  # TODO: nicknameにvalid,commentに何も指定せずに送るとnot valid asciiが返る(200が返されるはず・)
   def do_PATCH(req, res)
     authorization_header = req.header["authorization"][0]
     return res.status = 401, res.body = { "message":"Authentication Failed" }.to_json if authorization_header.nil? # authorizationヘッダが空白の場合
