@@ -3,6 +3,7 @@ require 'json'
 require 'pg'
 require 'base64'
 require 'bcrypt'
+require 'dotenv'
 
 # ヘルパーメソッドや共通の関数
 
@@ -103,9 +104,14 @@ end
 
 ### 正規表現 ###
 
+Dotenv.load
 
-# DB接続
-conn = PG.connect(dbname: 'code_track', user: 'postgres')
+conn = PG.connect(
+  dbname: ENV['DB_NAME'],
+  user: ENV['USER_NAME'],
+  password: ENV['PASSWORD'],
+  host: ENV['HOST']
+)
 
 # WEBrickサーバーの設定
 server = WEBrick::HTTPServer.new({
