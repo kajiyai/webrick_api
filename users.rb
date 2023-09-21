@@ -85,9 +85,8 @@ class UsersServlet < WEBrick::HTTPServlet::AbstractServlet
     req_body = req.body
     req_body_h = JSON.parse(req_body)
     nickname, comment = req_body_h["nickname"], req_body_h["comment"]
-    # TODO: if以降の条件式が怪しいから要確認
-    return res.status = 400, res.body = {"message": "User updation failed","cause": "not updatable user_id and password"}.to_json if req_body_h.keys.include?(["user_id","password"]) # user_id,passwordを変更しようとした場合
-    return res.status = 400, res.body = {"message": "User updation failed","cause": "required nickname or comment"}.to_json if nickname.nil? && comment.nil? # nickname,commentが共に空白の場合
+    return res.status = 400, res.body = {"message": "User updation failed","cause": "not updatable user_id and password"}.to_json if req_body_h.keys.any?(/user_id|password/) # user_id,passwordを変更しようとした場合
+    return res.status = 400, res.body = {"message": "User updation failed","cause": "required nickname or comment"}.to_json if nickname.empty? && comment.empty? # nickname,commentが共に空白の場合
 
     check_nickname_res = check_nickname(nickname)
     check_comment_res = check_comment(comment)
