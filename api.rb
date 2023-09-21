@@ -113,11 +113,13 @@ conn = PG.connect(
   host: ENV['HOST']
 )
 
+port = ENV['PORT'] ? ENV['PORT'].to_i : 3000
+
 # WEBrickサーバーの設定
 server = WEBrick::HTTPServer.new({
   :DocumentRoot => './',
-  :BindAddress => '127.0.0.1',
-  :Port => 8000
+  :BindAddress => '0.0.0.0',
+  :Port => port
 })
 
 # Signup エンドポイント
