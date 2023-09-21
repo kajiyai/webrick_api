@@ -31,6 +31,7 @@ end
 def check_authorization_header(encoded_str,conn)
   auth_user_id,auth_password = get_credential(encoded_str)
   result = conn.exec("SELECT password FROM users WHERE id = $1", [auth_user_id]).to_a
+  return false if result[0].nil?
   result[0]["password"].rstrip.eql?(auth_password)
 end
 
