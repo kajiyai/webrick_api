@@ -119,7 +119,7 @@ server = WEBrick::HTTPServer.new({
   :DocumentRoot => './',
   :BindAddress => '0.0.0.0',
   :Port => port,
-  :DirectoryIndex => []
+  :DocumentRootOptions => { :FancyIndexing => false }
 })
 
 # Signup エンドポイント
