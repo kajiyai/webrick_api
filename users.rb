@@ -30,8 +30,8 @@ end
 # auhorizationヘッダのチェック
 def check_authorization_header(encoded_str,conn)
   auth_user_id,auth_password = get_credential(encoded_str)
-  result = conn.exec("SELECT password FROM users WHERE id = $1", [auth_user_id])
-  result["password"].eql?(auth_password)
+  result = conn.exec("SELECT password FROM users WHERE id = $1", [auth_user_id]).to_a
+  result[0]["password"].rstrip.eql?(auth_password)
 end
 
 # authorizationヘッダの処理
@@ -62,8 +62,9 @@ class UsersServlet < WEBrick::HTTPServlet::AbstractServlet
     result = @conn.exec("SELECT * FROM users WHERE id = $1", [user_id])
     return res.status = 404, res.body = {"message": "No User found"}.to_json if result.cmd_tuples == 0 # 登録されていないuser_idを指定した場合
     user = result.to_a[0].map {|key,val| [key,val.rstrip]}.to_h
-    password = user["password"]
-    nickname = user["user_id"] if user["nickname"].empty?
+    user.delete("password") # passwordの削除
+    user.delete("comment") if user["comment"].empty? # commentが空の場合コメントは返さない
+    nickname = user["user_id"] if user["nickname"].empty? # nicknameが空の場合user_idをnicknameに設定する
     res.body = user.to_json
   end
 
@@ -73,7 +74,7 @@ class UsersServlet < WEBrick::HTTPServlet::AbstractServlet
     return res.status = 401, res.body = { "message":"Authentication Failed" }.to_json if !check_authorization_header(authorization_header,@conn) # authorizationヘッダの検証
 
     user_id = req.path.split('/')[-1]
-    return res.status = 403, res.body = { "message":"No Permission for Update"}.to_json if user_id !== get_auth_user_id(authorization_header) # アクセスしたpathのuser_idと認証で使用したuser_idが異なる場合
+    return res.status = 403, res.body = { "message":"No Permission for Update"}.to_json if user_id != get_auth_user_id(authorization_header) # アクセスしたpathのuser_idと認証で使用したuser_idが異なる場合
 
     result = @conn.exec("SELECT * FROM users WHERE id = $1", [user_id])
     return res.status = 404, res.body = {"message": "No User found"}.to_json if result.cmd_tuples == 0 # 登録されていないuser_idを指定した場合
