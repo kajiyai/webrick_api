@@ -150,8 +150,8 @@ end
 # TODO: 一度削除したのちにもう一度削除しようとすると500エラーが起こる(authヘッダの検証で引っかかるはずが・・)
 server.mount_proc '/close' do |req, res|
   authorization_header = req.header["authorization"][0]
-  return res.status = 401, res.body = { "message":"Authentication Failed" }.to_json if authorization_header.nil? # authorizationヘッダが空白の場合
-  return res.status = 401, res.body = { "message":"Authentication Failed" }.to_json if !check_authorization_header(authorization_header,conn) # authorizationヘッダの検証
+  return res.status = 401, res.body = { "message": "Authentication Failed" }.to_json if authorization_header.nil? # authorizationヘッダが空白の場合
+  return res.status = 401, res.body = { "message": "Authentication Failed" }.to_json if !check_authorization_header(authorization_header,conn) # authorizationヘッダの検証
   auth_user_id = get_auth_user_id(authorization_header)
   conn.exec("DELETE FROM users WHERE id = $1", [auth_user_id])
   res.status = 200
@@ -168,8 +168,8 @@ class UsersServlet < WEBrick::HTTPServlet::AbstractServlet
   # GETメソッド用の処理
   def do_GET(req, res)
     authorization_header = req.header["authorization"][0]
-    return res.status = 401, res.body = { "message":"Authentication Failed" }.to_json if authorization_header.nil? # authorizationヘッダが空白の場合
-    return res.status = 401, res.body = { "message":"Authentication Failed" }.to_json if !check_authorization_header(authorization_header,@conn) # authorizationヘッダの検証
+    return res.status = 401, res.body = { "message": "Authentication Failed" }.to_json if authorization_header.nil? # authorizationヘッダが空白の場合
+    return res.status = 401, res.body = { "message": "Authentication Failed" }.to_json if !check_authorization_header(authorization_header,@conn) # authorizationヘッダの検証
     user_id = req.path.split('/')[-1]
     result = @conn.exec("SELECT * FROM users WHERE id = $1", [user_id])
     return res.status = 404, res.body = {"message": "No User found"}.to_json if result.cmd_tuples == 0 # 登録されていないuser_idを指定した場合
@@ -183,11 +183,11 @@ class UsersServlet < WEBrick::HTTPServlet::AbstractServlet
   # PATCHメソッド用の処理
   def do_PATCH(req, res)
     authorization_header = req.header["authorization"][0]
-    return res.status = 401, res.body = { "message":"Authentication Failed" }.to_json if authorization_header.nil? # authorizationヘッダが空白の場合
-    return res.status = 401, res.body = { "message":"Authentication Failed" }.to_json if !check_authorization_header(authorization_header,@conn) # authorizationヘッダの検証
+    return res.status = 401, res.body = { "message": "Authentication Failed" }.to_json if authorization_header.nil? # authorizationヘッダが空白の場合
+    return res.status = 401, res.body = { "message": "Authentication Failed" }.to_json if !check_authorization_header(authorization_header,@conn) # authorizationヘッダの検証
 
     user_id = req.path.split('/')[-1]
-    return res.status = 403, res.body = { "message":"No Permission for Update"}.to_json if user_id != get_auth_user_id(authorization_header) # アクセスしたpathのuser_idと認証で使用したuser_idが異なる場合
+    return res.status = 403, res.body = { "message": "No Permission for Update"}.to_json if user_id != get_auth_user_id(authorization_header) # アクセスしたpathのuser_idと認証で使用したuser_idが異なる場合
 
     result = @conn.exec("SELECT * FROM users WHERE id = $1", [user_id])
     return res.status = 404, res.body = {"message": "No User found"}.to_json if result.cmd_tuples == 0 # 登録されていないuser_idを指定した場合
