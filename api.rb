@@ -6,7 +6,7 @@ require 'bcrypt'
 
 # ヘルパーメソッドや共通の関数
 
-# パスワードがの判定
+# パスワードの判定
 def password_matches?(hashed_password_from_database, plain_password)
   BCrypt::Password.new(hashed_password_from_database) == plain_password
 end
@@ -115,7 +115,6 @@ server = WEBrick::HTTPServer.new({
 })
 
 # Signup エンドポイント
-# TODO: passwordをbcryptを使ってハッシュ化する
 server.mount_proc '/signup' do |req, res|
   req_body = req.body
   req_body_h = JSON.parse(req_body)
