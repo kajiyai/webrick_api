@@ -2,15 +2,21 @@ require 'webrick'
 require 'json'
 require 'pg'
 require 'base64'
+require 'bcrypt'
 
 # ヘルパーメソッドや共通の関数
+
+# パスワードがの判定
+def password_matches?(hashed_password_from_database, plain_password)
+  BCrypt::Password.new(hashed_password_from_database) == plain_password
+end
 
 # auhorizationヘッダのチェック
 def check_authorization_header(encoded_str,conn)
   auth_user_id,auth_password = get_credential(encoded_str)
   result = conn.exec("SELECT password FROM users WHERE id = $1", [auth_user_id]).to_a
   return false if result[0].nil?
-  result[0]["password"].rstrip.eql?(auth_password)
+  password_matches?(result[0]["password"].rstrip, auth_password)
 end
 
 # authorizationヘッダの処理
@@ -127,7 +133,8 @@ server.mount_proc '/signup' do |req, res|
     res.body = {"message": "Account creation failed", "cause": check_password_result}.to_json
   else
     insert_user_sql = "insert into users (id,password,nickname,comment) values ($1, $2, $3, '')"
-    conn.exec_params(insert_user_sql, [user_id, password, user_id])
+    hashed_password = BCrypt::Password.create(password) # パスワードをハッシュ化
+    conn.exec_params(insert_user_sql, [user_id, hashed_password, user_id])
     res_body_h = {"user_id": user_id, "nickname": user_id} # nicknameの初期値はuser_idと同値
     res.body = {"message": "Account successfully created","user": res_body_h}.to_json
   end
