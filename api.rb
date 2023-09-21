@@ -118,7 +118,8 @@ port = ENV['PORT'] ? ENV['PORT'].to_i : 3000
 server = WEBrick::HTTPServer.new({
   :DocumentRoot => './',
   :BindAddress => '0.0.0.0',
-  :Port => port
+  :Port => port,
+  :DirectoryIndex => []
 })
 
 # Signup エンドポイント
