@@ -37,7 +37,7 @@ end
 
 # user_idのチェック
 def check_user_id(user_id)
-  return "require user_id" unless check_require(user_id)
+  return "required" unless check_require(user_id)
   return "more than 6 and less than 20" unless check_length(user_id, 6, 20)
   return "use half-width alphanumeric character " unless reg_single_byte_alp(user_id)
   true
@@ -45,7 +45,7 @@ end
 
 # passwordのチェック
 def check_password(password)
-  return "require password" unless check_require(password)
+  return "required" unless check_require(password)
   return "more than 8 and less than 20" unless check_length(password, 8, 20)
   return "use half-width alphanumeric character and some codes " unless reg_single_byte_alp_code(password)
   true
@@ -151,8 +151,8 @@ end
 # TODO: 一度削除したのちにもう一度削除しようとすると500エラーが起こる(authヘッダの検証で引っかかるはずが・・)
 server.mount_proc '/close' do |req, res|
   authorization_header = req.header["authorization"][0]
-  return res.status = 401, res.body = { "message": "Authentication Failed" }.to_json if authorization_header.nil? # authorizationヘッダが空白の場合
-  return res.status = 401, res.body = { "message": "Authentication Failed" }.to_json if !check_authorization_header(authorization_header,conn) # authorizationヘッダの検証
+  return res.status = 401, res.body = { "message": "Authentication failed" }.to_json if authorization_header.nil? # authorizationヘッダが空白の場合
+  return res.status = 401, res.body = { "message": "Authentication failed" }.to_json if !check_authorization_header(authorization_header,conn) # authorizationヘッダの検証
   auth_user_id = get_auth_user_id(authorization_header)
   conn.exec("DELETE FROM users WHERE id = $1", [auth_user_id])
   res.status = 200
@@ -169,8 +169,8 @@ class UsersServlet < WEBrick::HTTPServlet::AbstractServlet
   # GETメソッド用の処理
   def do_GET(req, res)
     authorization_header = req.header["authorization"][0]
-    return res.status = 401, res.body = { "message": "Authentication Failed" }.to_json if authorization_header.nil? # authorizationヘッダが空白の場合
-    return res.status = 401, res.body = { "message": "Authentication Failed" }.to_json if !check_authorization_header(authorization_header,@conn) # authorizationヘッダの検証
+    return res.status = 401, res.body = { "message": "Authentication failed" }.to_json if authorization_header.nil? # authorizationヘッダが空白の場合
+    return res.status = 401, res.body = { "message": "Authentication failed" }.to_json if !check_authorization_header(authorization_header,@conn) # authorizationヘッダの検証
     user_id = req.path.split('/')[-1]
     result = @conn.exec("SELECT * FROM users WHERE id = $1", [user_id])
     return res.status = 404, res.body = {"message": "No User found"}.to_json if result.cmd_tuples == 0 # 登録されていないuser_idを指定した場合
@@ -184,8 +184,8 @@ class UsersServlet < WEBrick::HTTPServlet::AbstractServlet
   # PATCHメソッド用の処理
   def do_PATCH(req, res)
     authorization_header = req.header["authorization"][0]
-    return res.status = 401, res.body = { "message": "Authentication Failed" }.to_json if authorization_header.nil? # authorizationヘッダが空白の場合
-    return res.status = 401, res.body = { "message": "Authentication Failed" }.to_json if !check_authorization_header(authorization_header,@conn) # authorizationヘッダの検証
+    return res.status = 401, res.body = { "message": "Authentication failed" }.to_json if authorization_header.nil? # authorizationヘッダが空白の場合
+    return res.status = 401, res.body = { "message": "Authentication failed" }.to_json if !check_authorization_header(authorization_header,@conn) # authorizationヘッダの検証
 
     user_id = req.path.split('/')[-1]
     return res.status = 403, res.body = { "message": "No Permission for Update"}.to_json if user_id != get_auth_user_id(authorization_header) # アクセスしたpathのuser_idと認証で使用したuser_idが異なる場合
@@ -210,7 +210,7 @@ class UsersServlet < WEBrick::HTTPServlet::AbstractServlet
     update_user_sql = "UPDATE users SET nickname = $1, comment = $2 WHERE id = $3"
     @conn.exec(update_user_sql, [nickname, comment, user_id])
     res_body_h = {"nickname": nickname, "comment": comment}
-    res.body = {"message": "User successfully updated","recipe": [res_body_h]}.to_json
+    res.body = {"message": "User successfully updated"}.to_json
   end
 end
 
