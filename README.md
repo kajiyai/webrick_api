@@ -1,7 +1,7 @@
 # Simple RESTful API with WEBrick and PostgreSQL
 
 ## デプロイ
-[https://crud-webrick.onrender.com/]: https://crud-webrick.onrender.com/
+https://crud-webrick.onrender.com/
 
 ## 概要
 
