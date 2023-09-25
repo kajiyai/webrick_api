@@ -1,5 +1,8 @@
 # Simple RESTful API with WEBrick and PostgreSQL
 
+## デプロイ
+[https://crud-webrick.onrender.com/]: https://crud-webrick.onrender.com/
+
 ## 概要
 
 このプロジェクトは、Rubyで作成されたシンプルなRESTful APIです。WEBrick WebサーバとPostgreSQLデータベースを用いています。ユーザーのアカウント作成、認証、および情報の取得・更新が可能です。
